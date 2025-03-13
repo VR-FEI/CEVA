@@ -1,0 +1,7 @@
+=== BBoxGeral7 ===
+Epochs = 359
+mAP50 = 0.982
+
+=== BBoxGeral8 ===
+Epochs = 166
+mAP50 = 0.986a
