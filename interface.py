@@ -20,6 +20,7 @@ from DOT_crop import DOTCrop
 from DOT_ocr_detect import DOTOCRDetect
 from SKU_read import SKURead
 from SKU_save import SKUSave
+from SFTP_uploader import SFTPUploader
 
 # TEMPLATE MATCH (sklearn)
 #from DOT_charmatch import DOTCharMatch
@@ -114,7 +115,9 @@ class App(customtkinter.CTk):
         self.webcam_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "webcam_light.png")), size=(26, 26))
         self.ocr_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "ocr_light.png")), size=(26, 26))
         self.export_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "export_light.png")), size=(26, 26))
+        self.exportsftp_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "cloud_computing_white.png")), size=(26, 26))
         self.send_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "message_light.png")), size=(26, 26))
+        
         #self.ceva_logo = Image.open(os.path.join(image_path, "ceva_icon.png"))
         #self.ceva_logo = ImageTk.PhotoImage(self.ceva_logo)
         
@@ -136,8 +139,11 @@ class App(customtkinter.CTk):
         #self.run_ocr_button = customtkinter.CTkButton(self.sidebar_frame, command=lambda: self.run_ocr_event(final=True), text="OCR", image=self.ocr_image, compound="bottom")
         #self.run_ocr_button.grid(row=4, column=0, padx=20, pady=20)
         
-        self.export_button = customtkinter.CTkButton(self.sidebar_frame, command=self.export_skus, text="EXPORTAR", image=self.export_image, compound="bottom")
+        self.export_button = customtkinter.CTkButton(self.sidebar_frame, command=self.export_skus, text="EXPORTAR LOCAL", image=self.export_image, compound="bottom")
         self.export_button.grid(row=4, column=0, padx=20, pady=20)
+
+        self.exportsftp_button = customtkinter.CTkButton(self.sidebar_frame, command=self.export_skus_sftp, text="EXPORTAR SFTP", image=self.exportsftp_image, compound="bottom")
+        self.exportsftp_button.grid(row=5, column=0, padx=20, pady=20)
 
         # Image/Webcam canvas
         self.video_frame = customtkinter.CTkFrame(self)
@@ -211,6 +217,8 @@ class App(customtkinter.CTk):
         self.SR = SKURead()
         self.SS = SKUSave()
         #self.OCR_Engine.Get(crop_image)
+
+        self.SFTPU = SFTPUploader()
         
     def ThreadInitializeRC(self):
         #if (self.ProgramMode == 0):
@@ -275,7 +283,7 @@ class App(customtkinter.CTk):
     def sku_verification(self, SKUtext, Key):
         # Suq Lass
         if SKUtext:
-            rec, desc, fam = verify(SKUtext)
+            rec, sku, desc, fam = verify(SKUtext)
             if rec == "SKU reconhecido: ":
                 return True
         return False      
@@ -352,7 +360,7 @@ class App(customtkinter.CTk):
         if crop_type != 'SKU':
             print(f"PADDLE OCR - {crop_type}: ")
         else:
-            Yrec, Ydesc, Yfam = verify(YoloOCRtxt)
+            Yrec, Yallsku, Ydesc, Yfam = verify(YoloOCRtxt)
             print(f"YOLO OCR   - SKU:{YoloOCRtxt} | Verify: {Yrec}; {Ydesc}; {Yfam}")
             
             #Prec, Pdesc, Pfam = verify(PaddleOCRtxt)
@@ -390,7 +398,7 @@ class App(customtkinter.CTk):
                     
                     if (self.sku_verification(YoloOCRtxt, 'SKU')):
                         #self.ocr_result[crop_type] = YoloOCRtxt
-                        Yrec, Ydesc, Yfam = verify(YoloOCRtxt)
+                        Yrec, Yallsku, Ydesc, Yfam = verify(YoloOCRtxt)
                         if YoloOCRtxt in self.CachedConfirmedSKUs:
                             self.CachedConfirmedSKUs[YoloOCRtxt] += 1
                             self.label_dot_result.update()                     
@@ -448,7 +456,8 @@ class App(customtkinter.CTk):
             except:
                 pass                
             
-            self.SS.save_skus_to_txt(FinalText)
+            #self.SS.save_skus_to_txt(FinalText)
+            self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam)
             self.text_dot_found.set(FinalText.upper())
             self.text_dot_infos.set(Infos.upper())
             self.label_dot_result.update()
@@ -492,27 +501,30 @@ class App(customtkinter.CTk):
             self.play_video_button.configure(self.sidebar_frame, command=lambda: self.update_video_button(Execute=True), text="EXECUTAR", image=self.play_image)
 
     def export_skus(self):
-        original_path_skus = self.SS.file_name
-        filetype = ("Text file", ".txt")
-        
-        with open(original_path_skus, "r") as f:
-            data = f.read()
-        
-        filename = filedialog.asksaveasfilename(
-            defaultextension=filetype[1],
-            filetypes=[filetype]
+        export_path_agro = filedialog.asksaveasfilename(
+            defaultextension=".xml",
+            filetypes=[("XML file", ".xml")],
+            title="Save AGRO SKU File"
         )
         
-        if filename:
-            with open(filename, "w") as f:
-                f.write(data)
-            
-            print(f"Data exported to: {filename}")
-            
-            with open(original_path_skus, 'w') as file:
-                pass
-            
-            #self.SS.update_sku_file_name()
+        if export_path_agro:
+            self.SS.export_skus(export_path_agro, None)  # Exporta apenas o arquivo AGRO
+            print(f"AGRO SKU data exported to: {export_path_agro}")
+
+        export_path_truck = filedialog.asksaveasfilename(
+            defaultextension=".xml",
+            filetypes=[("XML file", ".xml")],
+            title="Save TRUCK SKU File"
+        )
+
+        if export_path_truck:
+            self.SS.export_skus(None, export_path_truck)  # Exporta apenas o arquivo TRUCK
+            print(f"TRUCK SKU data exported to: {export_path_truck}")
+    
+    def export_skus_sftp(self):
+        success = self.SFTPU.upload_sku_files()
+        if success:
+            self.SS.initialize_both_xml()
         
     def mannual_sku(self):
         mannual_input = self.entrySKU.get().upper()
@@ -522,14 +534,16 @@ class App(customtkinter.CTk):
         
         self.sku_verify_beep()
         
-        Yrec, Ydesc, Yfam = verify(mannual_input)
+        Yrec, Yallsku, Ydesc, Yfam = verify(mannual_input)
         
         Infos = "Descrição: " + Ydesc + ' ' + Yfam
         
         if SKU_Recognized.value:
-            self.SS.save_skus_to_txt(mannual_input, sku_replaced=True)
+            #self.SS.save_skus_to_txt(mannual_input, sku_replaced=True)
+            self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam, sku_replaced=True)
         else:
-            self.SS.save_skus_to_txt(mannual_input)
+            #self.SS.save_skus_to_txt(mannual_input)
+            self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam)
         self.text_dot_infos.set(Infos.upper())
           
 

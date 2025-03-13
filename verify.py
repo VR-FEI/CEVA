@@ -68,7 +68,8 @@ def verify(SKU):
             desc = fam = "*"
         else:
             rec = "SKU reconhecido: "
-            desc = df["DESCRIÇÃO "].to_string(header = False, index = False)
-            fam = df["FAMILIA "].to_string(header = False, index = False)
+            desc = df["DESCRIÇÃO"].to_string(header = False, index = False)
+            fam = df["FAMILIA"].to_string(header = False, index = False)
+            all_sku = df["SKU"].to_string(header=False, index=False)
 
-    return rec, desc, fam
+    return rec, all_sku, desc, fam
