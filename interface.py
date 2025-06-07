@@ -20,7 +20,8 @@ from DOT_crop import DOTCrop
 from DOT_ocr_detect import DOTOCRDetect
 from SKU_read import SKURead
 from SKU_save import SKUSave
-from SFTP_uploader import SFTPUploader
+#from SFTP_uploader import SFTPUploader
+from EXCEL_exporter import ExcelExporter
 
 # TEMPLATE MATCH (sklearn)
 #from DOT_charmatch import DOTCharMatch
@@ -142,7 +143,7 @@ class App(customtkinter.CTk):
         self.export_button = customtkinter.CTkButton(self.sidebar_frame, command=self.export_skus, text="EXPORTAR LOCAL", image=self.export_image, compound="bottom")
         self.export_button.grid(row=4, column=0, padx=20, pady=20)
 
-        self.exportsftp_button = customtkinter.CTkButton(self.sidebar_frame, command=self.export_skus_sftp, text="EXPORTAR SFTP", image=self.exportsftp_image, compound="bottom")
+        self.exportsftp_button = customtkinter.CTkButton(self.sidebar_frame, command=self.export_skus_excel, text="EXPORTAR EXCEL", image=self.exportsftp_image, compound="bottom")
         self.exportsftp_button.grid(row=5, column=0, padx=20, pady=20)
 
         # Image/Webcam canvas
@@ -218,7 +219,8 @@ class App(customtkinter.CTk):
         self.SS = SKUSave()
         #self.OCR_Engine.Get(crop_image)
 
-        self.SFTPU = SFTPUploader()
+        #self.SFTPU = SFTPUploader()
+        self.EXCELEXP = ExcelExporter()
         
     def ThreadInitializeRC(self):
         #if (self.ProgramMode == 0):
@@ -456,8 +458,8 @@ class App(customtkinter.CTk):
             except:
                 pass                
             
-            #self.SS.save_skus_to_txt(FinalText)
-            self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam)
+            self.SS.save_skus_to_txt(Yallsku, Ydesc, Yfam)
+            #self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam)
             self.text_dot_found.set(FinalText.upper())
             self.text_dot_infos.set(Infos.upper())
             self.label_dot_result.update()
@@ -521,10 +523,17 @@ class App(customtkinter.CTk):
             self.SS.export_skus(None, export_path_truck)  # Exporta apenas o arquivo TRUCK
             print(f"TRUCK SKU data exported to: {export_path_truck}")
     
-    def export_skus_sftp(self):
-        success = self.SFTPU.upload_sku_files()
+    #def export_skus_sftp(self):
+    #    success = self.EXCELEXP.upload_sku_files()
+    #    if success:
+    #        self.SS.initialize_both_xml()
+    def export_skus_excel(self):
+        success = self.EXCELEXP.export_skus()
         if success:
-            self.SS.initialize_both_xml()
+            tkinter.messagebox.showinfo("Sucesso", "SKUs exportados para o Excel")
+        else:
+            tkinter.messagebox.showerror("Falha", "Falha ao exportar SKUs para o Excel")
+
         
     def mannual_sku(self):
         mannual_input = self.entrySKU.get().upper()
@@ -539,11 +548,11 @@ class App(customtkinter.CTk):
         Infos = "Descrição: " + Ydesc + ' ' + Yfam
         
         if SKU_Recognized.value:
-            #self.SS.save_skus_to_txt(mannual_input, sku_replaced=True)
-            self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam, sku_replaced=True)
+            self.SS.save_skus_to_txt(Yallsku, Ydesc, Yfam, sku_replaced=True)
+            #self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam, sku_replaced=True)
         else:
-            #self.SS.save_skus_to_txt(mannual_input)
-            self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam)
+            self.SS.save_skus_to_txt(Yallsku, Ydesc, Yfam)
+            #self.SS.save_skus_to_xml(Yallsku, Ydesc, Yfam)
         self.text_dot_infos.set(Infos.upper())
           
 

@@ -10,9 +10,9 @@ class SKUSave:
 	
 		self._initialize_xml(self.file_name_agro)
 		self._initialize_xml(self.file_name_truck)
-		#temp_file_name = "temp.txt"
+		temp_file_name = "temp.txt"
+		self.file_name = os.path.join(results_folder_path, temp_file_name)
 		#self.timestamp = time.strftime("%Y-%m-%d_%H-%M")
-		#self.file_name = os.path.join(results_folder_path, temp_file_name)
 
 	def _initialize_xml(self, file_name):
 		if not os.path.exists(file_name):
@@ -28,19 +28,19 @@ class SKUSave:
 				tree.write(file)
 
 
-	def save_skus_to_txt(self, sku, sku_replaced=False):
-		# If model predict wrong and the person replaced the sku
+	def save_skus_to_txt(self, sku, description, family, sku_replaced=False):
+    	# If model predict wrong and the person replaced the sku
 		if sku_replaced:
 			with open(self.file_name, 'r') as file:
 				lines = file.readlines()
-			
-			lines[-1] = sku + '\n'
-	
+			index = -1 if len(lines) > 0 else 0
+			lines[index] = f"{sku},{description},{family}\n"
+
 			with open(self.file_name, 'w') as file:
 				file.writelines(lines)
 		else:
 			with open(self.file_name, "a") as file:
-				file.write(f"{sku}\n")
+				file.write(f"{sku},{description},{family}\n")
 	
 	def save_skus_to_xml(self, sku, description, family, sku_replaced=False):
 		if family.upper() == "AGRO":
